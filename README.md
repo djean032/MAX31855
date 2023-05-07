@@ -16,9 +16,11 @@ The Arduino sketch is designed to print both to a serial monitor on a PC and a L
 Custom library that creates a class instance of each thermocouple amplifier and provides functions to read data, check errors, and do a rational polynomial caluclation to accurately determine the temperature.
 
 ## Schematic
-
+![image](https://user-images.githubusercontent.com/59145040/236655637-3a5744ae-9aae-4677-a55e-aa6a550ce21e.png)
 
 ## PCB
+![image](https://user-images.githubusercontent.com/59145040/236655648-e1c19021-bc43-46e3-9a99-b2080be4efc2.png)
+
 
 ## Test Data and Evaluation
 
