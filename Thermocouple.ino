@@ -26,7 +26,7 @@ For the slave select or chip select pins, any of the digital pins work. In this 
 #define MAXCLK  SCK
 
 // Initialize the thermocouples using an array of pointers to their location, so we can iterate over them in our loop function.
-MAX31855 *thermocouple[] = {new MAX31855(MAXCLK, MAXCS1, MAXDO, "T"),new MAX31855(MAXCLK, MAXCS2, MAXDO, "T"),new MAX31855(MAXCLK, MAXCS3, MAXDO, "T"),new MAX31855(MAXCLK, MAXCS4, MAXDO, "T")};
+MAX31855 *thermocouple[] = {new MAX31855(MAXCLK, MAXCS1, MAXDO, 'T'),new MAX31855(MAXCLK, MAXCS2, MAXDO, 'T'),new MAX31855(MAXCLK, MAXCS3, MAXDO, 'T'),new MAX31855(MAXCLK, MAXCS4, MAXDO, 'T')};
 
 // Initialize our LCD screen which is connected to digital pin 7 on our Arduino.
 SoftwareSerial LCD = SoftwareSerial(255,7);
