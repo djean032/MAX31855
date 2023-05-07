@@ -1,0 +1,4 @@
+{
+    "sketch": "Thermocouple.ino",
+    "board": "arduino:avr:micro"
+}
