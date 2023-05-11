@@ -33,6 +33,10 @@ SoftwareSerial LCD = SoftwareSerial(255,7);
 
 
 void setup() {
+
+  pinMode(7, OUTPUT);
+  digitalWrite(7, HIGH);
+
   for (int i=0; i<4; i++)
   {
     (*thermocouple[i]).begin();
@@ -66,7 +70,7 @@ void setup() {
 void loop() {
 
   // Instantiating our low pass filters, which are weighted moving averages that use a weight, alpha, to determine how much of the previous value to carry forward.
-  LowPassFilter *filter[] = {new LowPassFilter(0.75),new LowPassFilter(0.75),new LowPassFilter(0.75),new LowPassFilter(0.75)};
+  //LowPassFilter *filter[] = {new LowPassFilter(0.4),new LowPassFilter(0.4),new LowPassFilter(0.4),new LowPassFilter(0.4)};
 
   // Setup serial and LCD for print operationos
   Serial.println();
@@ -82,26 +86,12 @@ void loop() {
     bits = (*thermocouple[i]).readBits();
     temp = (*thermocouple[i]).correctedTempCelsius(bits);
     therm = (*thermocouple[i]).readInternal(bits);
-    double filteredTemp = (*filter[i]).filter(temp);
-    String fault = (*thermocouple[i]).readError(bits);
-    /*if (fault == "No faults detected.")
-    {
-      String tempString = "Sensor " + String(i) + ": " + String(temp);
-      Serial.print(temp);
-      Serial.print("\t");
-      LCD.print(tempString);
-      LCD.write(13);
-    }
-    else
-    {
-      String faultString = "Sensor " + String(i) + ": " + String(fault);
-      Serial.print(fault);
-      Serial.print("\t");
-      LCD.print(faultString);
-      LCD.write(13);
-    }*/
+    //double filteredTemp = (*filter[i]).filter(temp);
+    String tempString = "Sensor " + String(i) + ": " + String(temp);
+    Serial.print(temp);
     Serial.print("\t");
-    Serial.print(therm);
+    LCD.print(tempString);
+    LCD.write(13);
   }
-  delay(500);
+  delay(1000);
 }

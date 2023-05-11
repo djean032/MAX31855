@@ -91,17 +91,34 @@ For more info, see: http://www.mosaic-industries.com/embedded-systems/microcontr
 double MAX31855::correctedTempCelsius(int32_t bits)
 {
 
-    double correctedTemp;
-    double deltaV;
+    double correctedTemp = 0;
+    double deltaV = 0;
+    double deltaTcj = 0;
     double wrongTemp = readCelsius(bits);
+    double internalTemp = readInternal(bits);
     double To, Vo, p1, p2, p3, p4, q1, q2, q3;
-    double thermocoupleVoltage;
-
+    double Tocj, Vocj, p1cj, p2cj, p3cj, p4cj, q1cj, q2cj;
+    double thermocoupleVoltage = 0;
+    double coldJunctionVoltage = 0;
 
     // Switch statement that depends on the type of thermocouple used. Coefficients are dependent on which thermocouple is used.
     switch (_type)
     {
     case 'T':
+    thermocoupleVoltage = (wrongTemp) * 0.05218;
+    Tocj = 2.5000000E+01;
+    Vocj = 9.9198279E-01;
+    p1cj = 4.0716564E-02;
+    p2cj = 7.1170297E-04;
+    p3cj = 6.8782631E-07;
+    p4cj = 4.3295061E-11;
+    q1cj = 1.6458102E-02;
+    q2cj = 0.0000000E+00;
+
+
+    deltaTcj = internalTemp - Tocj;
+    //coldJunctionVoltage = Vocj + (deltaTcj * (p1cj + deltaTcj * (p2cj + deltaTcj * (p3cj + deltaTcj * p4cj)))) / (1 + deltaTcj * (q1cj + deltaV * q2cj));
+    //thermocoupleVoltage += coldJunctionVoltage;
       if(thermocoupleVoltage <= -4.648){
           To = -1.9243000E+02;
           Vo = -5.4798963E+00;
@@ -151,8 +168,22 @@ double MAX31855::correctedTempCelsius(int32_t bits)
     break;
 
     case 'K':
-      thermocoupleVoltage = wrongTemp * 0.041276;
+      thermocoupleVoltage = (wrongTemp - internalTemp) * 0.041276;
 
+
+      Tocj = 2.5000000E+01;
+      Vocj = 1.0003453E+00;
+      p1cj = 4.0514854E-02;
+      p2cj = -3.8789638E-05;
+      p3cj = -2.8608478E-06;
+      p4cj = -9.5367041E-10;
+      q1cj = -1.3948675E-03;
+      q2cj = -6.7976627E-05;
+
+
+      deltaTcj = internalTemp - Tocj;
+      //coldJunctionVoltage = Vocj + (deltaTcj * (p1cj + deltaTcj * (p2cj + deltaTcj * (p3cj + deltaTcj * p4cj)))) / (1 + deltaTcj * (q1cj + deltaV * q2cj));
+      //thermocoupleVoltage += coldJunctionVoltage;
       if(thermocoupleVoltage <= -3.554){
           To = -1.2147164E+02;
           Vo = -4.1790858E+00;
@@ -210,16 +241,10 @@ double MAX31855::correctedTempCelsius(int32_t bits)
           q2 = 2.3841860E-03;
           q3 = 0.0000000E+00;
       }
-
       break;
-
-    default:
-      break;
-
-    deltaV = thermocoupleVoltage - Vo;
-    correctedTemp = To + (deltaV * (p1 + deltaV * (p2 + deltaV * (p3 + deltaV * p4)))) / (1 + deltaV * (q1 + deltaV * (q2 + deltaV * q3)));
     }
-
+  deltaV = thermocoupleVoltage - Vo;
+  correctedTemp = To + (deltaV * (p1 + deltaV * (p2 + deltaV * (p3 + deltaV * p4)))) / (1 + deltaV * (q1 + deltaV * (q2 + deltaV * q3)));
   return correctedTemp;
 }
 
@@ -273,7 +298,7 @@ int32_t MAX31855::readBits()
 
   digitalWrite(_cs, LOW);                                          //set software CS low to enable SPI interface for MAX31855
 
-  SPI.beginTransaction(SPISettings(14000000, MSBFIRST, SPI_MODE0));  // Start transaction at 14MHz MSB
+  SPI.beginTransaction(SPISettings(5000000, MSBFIRST, SPI_MODE0));  // Start transaction at 14MHz MSB
   dataBuffer = SPI.transfer(0);                     // Read a byte
   dataBuffer <<= 8;                                 // Shift over left 8 bits
   dataBuffer |= SPI.transfer(0);                    // Read a byte
@@ -281,7 +306,7 @@ int32_t MAX31855::readBits()
   dataBuffer |= SPI.transfer(0);                    // Read a byte
   dataBuffer <<= 8;                                 // Shift over left 8 bits
   dataBuffer |= SPI.transfer(0);                    // Read a byte
-  SPI.endTransaction();   
+  SPI.endTransaction();
 
   digitalWrite(_cs, HIGH);                                         //disables SPI interface for MAX31855, but it will initiate measurement/conversion
 
