@@ -1,4 +1,6 @@
 {
     "sketch": "Thermocouple.ino",
-    "board": "arduino:avr:micro"
+    "board": "arduino:avr:micro",
+    "port": "/dev/tty.usbmodem2101",
+    "programmer": "arduinoisp"
 }

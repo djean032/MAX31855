@@ -10,18 +10,19 @@ Initial Support for Type T and K Thermocouples added on 6MAY23.
 #define MAX31855_h
 
 #include "Arduino.h"
+#include "SPI.h"
 
 // Thermocouple amplifier class for MAX 31855
 class MAX31855 {
 
   public:
     MAX31855(int8_t sclk, int8_t cs, int8_t miso, char type);
-    bool begin(void);
-    double readInternal(void);
-    double readCelsius(void);
-    double correctedTempCelsius(void);
-    String readError(void);
-    unsigned long readBits(void);
+    double readInternal(int32_t bits1);
+    double readCelsius(int32_t bits2);
+    double correctedTempCelsius(int32_t bits);
+    String readError(int32_t bits3);
+    int32_t readBits(void);
+    void MAX31855::begin(void);
 
   private:
     int8_t _sclk;

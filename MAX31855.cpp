@@ -22,55 +22,36 @@ MAX31855::MAX31855(int8_t sclk, int8_t cs, int8_t miso, char type)
   _type = type;
 }
 
-
-/*
-Begin Function for thermocopules that sets the chip select, miso, and sclk pins.
-
-This function can be used to ensure that it is initialized properly by conducting a boolean check against it's return value.
-*/
-
-bool MAX31855::begin(void)
+void MAX31855::begin(void)
 {
+
   pinMode(_cs, OUTPUT);
   digitalWrite(_cs, HIGH);
+  SPI.begin();
 
-  pinMode(_miso, INPUT);
-
-  pinMode(_sclk, OUTPUT);
-  digitalWrite(_sclk, LOW);
-
-  delay(100);
-
-  return true;
+  delay(200);
 }
+
 
 /*
 Function to read internal thermistor used to calculate cold-junction temperature.
 */
 
-double MAX31855::readInternal(void)
+double MAX31855::readInternal(int32_t bits1)
 {
   double tempCelsius;
-  unsigned long bits;
 
-  bits = readBits();
-  return tempCelsius;
+  bits1 = bits1 >> 4; //strip fault bits and reserved bit
+  tempCelsius = (bits1 & 0x000007FF);
 
-  bits = bits >> 4; //strip fault bits and reserved bit
-
-  if (bits & 0x00000800)
+  if (bits1 & 0x00000800)
   {
-    bits = ~bits; // invert due to two's complement
-    tempCelsius = bits & 0x000007FF; // only care about lower 11 bits
+    bits1 = ~bits1; // invert due to two's complement
+    tempCelsius = bits1 & 0x000007FF; // only care about lower 11 bits
     tempCelsius += 1; // add one two's complement
-    tempCelsius *= -0.0625; // convert to negative and multiply by resolution
+    tempCelsius *= -1; // convert to negative and multiply by resolution
   }
-  else
-  {
-    tempCelsius = (bits & 0x000007FF); // again, let's strip all but lower 11 bits
-    tempCelsius *= 0.0625; // multiply by resolution
-  }
-
+  tempCelsius *= 0.0625;
   return tempCelsius;
 }
 
@@ -80,44 +61,39 @@ Function to read the temperature calculated by the MAX31855.
 The chip assumes a linear relationship throughout its measurment range. If more accuracy is desired, use the corrected temp function.
 */
 
-double MAX31855::readCelsius(void)
+double MAX31855::readCelsius(int32_t bits2)
 {
   double tempCelsius;
-  unsigned long bits;
 
-  bits = readBits();
+    bits2 = bits2 >> 18; // strip all but 14-bit thermocouple data
 
-    bits = bits >> 18; // strip all but 14-bit thermocouple data
+    tempCelsius = (bits2 & 0x00001FFF);
 
-    if (bits & 0x2000) // check sign bit to determine if negative number
+    if (bits2 & 0x00002000) // check sign bit to determine if negative number
     {
-      bits = ~bits; // invert because the data is two's complement
-      tempCelsius = bits & 0x00001FFF;
+      bits2 = ~bits2; // invert because the data is two's complement
+      tempCelsius = bits2 & 0x00001FFF;
       tempCelsius += 1; //  add one because two's complement
-      tempCelsius *= -0.25; // convert back to negative and multiply by resolution to get value
+      tempCelsius *= -1; // convert back to negative and multiply by resolution to get value
     }
-    else
-    {
-      tempCelsius = (bits & 0x00001FFF); // bitwise and to convert to get our temp data out
-      tempCelsius *= 0.25; // multiply by resolution
-    }
+    tempCelsius *= 0.25; // multiply by resolution
+
   return tempCelsius;
 }
 
 /*
 Function to calculate the cold-junction compensated temperature of the thermocouple.
-
 This uses the measured thermocouple voltage and uses a rational polynomial calculation to convert the voltage to temperature.
 
 For more info, see: http://www.mosaic-industries.com/embedded-systems/microcontroller-projects/temperature-measurement/thermocouple/calibration-table
 */
 
-double MAX31855::correctedTempCelsius(void)
+double MAX31855::correctedTempCelsius(int32_t bits)
 {
 
     double correctedTemp;
     double deltaV;
-    double wrongTemp = readCelsius();
+    double wrongTemp = readCelsius(bits);
     double To, Vo, p1, p2, p3, p4, q1, q2, q3;
     double thermocoupleVoltage;
 
@@ -251,14 +227,13 @@ double MAX31855::correctedTempCelsius(void)
 Function to read errors from the thermocouples.
 */
 
-String MAX31855::readError()
+String MAX31855::readError(int32_t bits3)
 {
-  unsigned long bits = readBits();
   String fault;
-  if (bits & 0x00010000) // check if fault bit set
+  if (bits3 & 0x00010000) // check if fault bit set
   {
     // switch statement that checks last three bits values to determine fault.
-    switch (bits & 0x00000007)
+    switch (bits3 & 0x00000007)
     {
       case 0x01:
         fault = "No Thermocouple Connected";
@@ -286,28 +261,35 @@ Function to read in the 32-bit output from the MAX31855.
 It uses bitbanging to go through the bits, so they can be preserved for other operations.
 */
 
-unsigned long MAX31855::readBits()
+int32_t MAX31855::readBits()
 {
-  // Instantiate an unsigned long for our raw data from MAX31855. Note, use the unsigned long so we can transfer bits directly.
-  unsigned long rawBits = 0;
-  digitalWrite(_cs, LOW); // Select chip (stop measuring and start communicating with Arduino)
+  int32_t dataBuffer = 0;
 
+  digitalWrite(_cs, LOW);                                          //stop  measurement/conversion
+  delayMicroseconds(1);                                            //pulse fall time > 100nS
+  digitalWrite(_cs, HIGH);                                         //start measurement/conversion
 
-  for (int i = 31; i >= 0; i--) // Iterator to go through each bit aka bitbanging
-  {
-    digitalWrite(_sclk, HIGH); // data sent after rising edge
+  delay(100);
 
-    if (digitalRead(_miso)) // check if MISO bit is high
-    {
-      rawBits |= ((unsigned long)1 << i); // read if MISO bit is high, if so put a one in rawBits and bit shift left by iterator.
-    }
+  digitalWrite(_cs, LOW);                                          //set software CS low to enable SPI interface for MAX31855
 
-    digitalWrite(_sclk, LOW); //data transfer complete on falling edge
-  }
+  SPI.beginTransaction(SPISettings(14000000, MSBFIRST, SPI_MODE0));  // Start transaction at 14MHz MSB
+  dataBuffer = SPI.transfer(0);                     // Read a byte
+  dataBuffer <<= 8;                                 // Shift over left 8 bits
+  dataBuffer |= SPI.transfer(0);                    // Read a byte
+  dataBuffer <<= 8;                                 // Shift over left 8 bits
+  dataBuffer |= SPI.transfer(0);                    // Read a byte
+  dataBuffer <<= 8;                                 // Shift over left 8 bits
+  dataBuffer |= SPI.transfer(0);                    // Read a byte
+  SPI.endTransaction();   
 
-  digitalWrite(_cs, HIGH); // back to measuring
+  digitalWrite(_cs, HIGH);                                         //disables SPI interface for MAX31855, but it will initiate measurement/conversion
 
-  return(rawBits);
+  SPI.endTransaction();                                            //de-asserting hardware CS & free hw SPI for other slaves
+// uncomment this for raw data troubleshooting
+  //Serial.print(dataBuffer, HEX);
+
+  return dataBuffer;
 }
 
 

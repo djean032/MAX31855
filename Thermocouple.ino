@@ -33,12 +33,10 @@ SoftwareSerial LCD = SoftwareSerial(255,7);
 
 
 void setup() {
-
-  // Initializing our LCD
-  pinMode(7,OUTPUT);
-  digitalWrite(7,HIGH);
-
-
+  for (int i=0; i<4; i++)
+  {
+    (*thermocouple[i]).begin();
+  }
   // Initializing our Serial communications
   Serial.begin(9600);
   LCD.begin(9600);
@@ -49,13 +47,13 @@ void setup() {
   // Turns backlight on.
   LCD.write(17);
 
-
   // Fault checking each of our thermocouples.
   for (int i=0; i<4; i++)
   {
-    String fault = (*thermocouple[i]).readError();
+    int32_t bits = (*thermocouple[i]).readBits();
+    String fault = (*thermocouple[i]).readError(bits);
     Serial.println(fault);
-    LCD.write(12 + i);
+    LCD.write(12);
     LCD.print(fault);
   }
 
@@ -77,13 +75,19 @@ void loop() {
   // Time to loop through our pointer array for the thermocouples.
   for (int i=0; i<4; i++)
   {
-    double temp = (*thermocouple[i]).correctedTempCelsius();
+    double temp = 0;
+    double therm = 0;
+    int32_t bits = 0;
+
+    bits = (*thermocouple[i]).readBits();
+    temp = (*thermocouple[i]).correctedTempCelsius(bits);
+    therm = (*thermocouple[i]).readInternal(bits);
     double filteredTemp = (*filter[i]).filter(temp);
-    String fault = (*thermocouple[i]).readError();
-    if (fault == "No faults detected.")
+    String fault = (*thermocouple[i]).readError(bits);
+    /*if (fault == "No faults detected.")
     {
-      String tempString = "Sensor " + String(i) + ": " + String(filteredTemp);
-      Serial.print(filteredTemp);
+      String tempString = "Sensor " + String(i) + ": " + String(temp);
+      Serial.print(temp);
       Serial.print("\t");
       LCD.print(tempString);
       LCD.write(13);
@@ -95,8 +99,9 @@ void loop() {
       Serial.print("\t");
       LCD.print(faultString);
       LCD.write(13);
-    }
+    }*/
+    Serial.print("\t");
+    Serial.print(therm);
   }
-
-   delay(1000);
+  delay(500);
 }
