@@ -1,17 +1,14 @@
 # MAX31855
 
 ## Project Description
-A solution to control and monitor four thermocouples using the MAX31855 Thermocouple Amplifier.
+A solution to control and monitor four thermocouples using the MAX31855 Thermocouple Amplifier and an Arduino Micro.
 
 ## Contents
-- Arduino Sketch
-- Custom MAX31855 Library
+- MAX31855 library
+- Features
 - KICAD Generated Schematic and PCB
-- Test Data
-
-## Arduino Sketch
-
-The Arduino sketch is designed to print both to a serial monitor on a PC and a LCD screen that is mounted on the device.
+- Evaluation
+- v2
 
 ## MAX31855 Library
 
@@ -19,11 +16,7 @@ Custom library that creates a class instance of each thermocouple amplifier and 
 
 The initial form of this library uses a switch statement to select the proper conversion function based on thermocouple type, of which only type 'T' and 'K' are currently supported. Additional types will be added in the future, so this library can be universally used across all thermocouple and MAX31855 types.
 
-
-## Schematic
-![image](https://user-images.githubusercontent.com/59145040/236655637-3a5744ae-9aae-4677-a55e-aa6a550ce21e.png)
-
-## Circuit Features
+## Features
 
 #### Overview
 
@@ -47,7 +40,8 @@ The device is powered via a 9V external AC to DC power supply. In our current ap
 
 The MAX31855 requires 3.3V to operate, while the Arduino Micro operates at 5V, so two bi-directional level shifters were used for the data and power lines for the thermocouple amplifiers.
 
-
+## Schematic
+![image](https://user-images.githubusercontent.com/59145040/236655637-3a5744ae-9aae-4677-a55e-aa6a550ce21e.png)
 
 ## PCB
 ![image](https://user-images.githubusercontent.com/59145040/236655648-e1c19021-bc43-46e3-9a99-b2080be4efc2.png)
