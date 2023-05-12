@@ -1,14 +1,17 @@
 # MAX31855
 
 ## Project Description
-A solution to control and monitor four thermocouples using the MAX31855 Thermocouple Amplifier and an Arduino Micro.
+A solution to control and monitor four thermocouples using the MAX31855 Thermocouple Amplifier.
 
 ## Contents
-- MAX31855 library
-- Features
+- Arduino Sketch
+- Custom MAX31855 Library
 - KICAD Generated Schematic and PCB
-- Evaluation
-- v2
+- Test Data
+
+## Arduino Sketch
+
+The Arduino sketch is designed to print both to a serial monitor on a PC and a LCD screen that is mounted on the device.
 
 ## MAX31855 Library
 
@@ -16,7 +19,11 @@ Custom library that creates a class instance of each thermocouple amplifier and 
 
 The initial form of this library uses a switch statement to select the proper conversion function based on thermocouple type, of which only type 'T' and 'K' are currently supported. Additional types will be added in the future, so this library can be universally used across all thermocouple and MAX31855 types.
 
-## Features
+
+## Schematic
+![image](https://user-images.githubusercontent.com/59145040/236655637-3a5744ae-9aae-4677-a55e-aa6a550ce21e.png)
+
+## Circuit Features
 
 #### Overview
 
@@ -34,14 +41,13 @@ The data is simultaneously displayed on an LCD screen and transmitted to a PC vi
 
 #### Power Supply
 
-The device is powered via a 9V external AC to DC power supply. In our current application, we have an approximately 15m USB cable, which is triple the spec for USB 2.0. This introduces quite a bit of noise into the system; therefore, an internal extension  "data-only" cable has been added to prevent this power line noise. A USB-B to USB-B "isolator" that only connects the GND and data lines will be added in the future to prevent modifications of the Arduino itself or the need for a custom cable.
+The device is powered via a 9V external AC to DC power supply. In our current application, we have an approximately 15m USB cable, which is triple the specification for USB 2.0. 
 
 #### Miscellaneous
 
 The MAX31855 requires 3.3V to operate, while the Arduino Micro operates at 5V, so two bi-directional level shifters were used for the data and power lines for the thermocouple amplifiers.
 
-## Schematic
-![image](https://user-images.githubusercontent.com/59145040/236655637-3a5744ae-9aae-4677-a55e-aa6a550ce21e.png)
+
 
 ## PCB
 ![image](https://user-images.githubusercontent.com/59145040/236655648-e1c19021-bc43-46e3-9a99-b2080be4efc2.png)
@@ -49,12 +55,27 @@ The MAX31855 requires 3.3V to operate, while the Arduino Micro operates at 5V, s
 
 ## Evaluation
 
-Overall, once the rational polynomial function and filtering was added, the performance was adequate for our lab's needs. It successfully reads temperatures from room temperature down to cryogenic temperatures used in our lab's spectrometer.
+#### Summary
+Overall, once the rational polynomial function and filtering was added, the performance was adequate for our lab's needs. It successfully reads temperatures from boiling water down to cryogenic temperatures used in our lab's spectrometer.
 
+#### Data
+|        Cooling Bath         | Measured Temperature ($\degree C$) | Theoretical Value ($\degree C$) |
+|:---------------------------:|:----------------------------------:|:-------------------------------:|
+|          Ice Water          |                -2.0                |                0                |
+|      Dry Ice + Acetone      |               -79.4                |               -78               |
+|   Acetone + liquid N$^2$    |               -95.0                |               -94               |
+| n-pentane +    liquid N$^2$ |              -133.5               |              -131               |
+|        liquid N$^2$         |                -200                |              -196               |
+|        Boiling Water        |               98.0                |         100                        |
+
+Overall, the data matches very well with the theoretical values, within 2% error for all the cooling baths. The ice water and boiling water were done with tap water, so that is the likely source for the deviation there.
+
+#### Future
 Further improvements will be implemented in v2. These include capacitors to clean up the power supply and capacitors added on to the VCC and GND lines of the thermocouple amplifiers to prevent coupling of the data and power supply lines.
 
 
-## v2
+## v2 To-Do List
 - Proper power supply design
 	- Add appropriate capacitors to the input to reduce noise
 - Add small capacitors to the VCC and GND lines of the thermocouple amplifiers to prevent coupling of the signal and the power lines.
+- Transmit data over something other than USB
