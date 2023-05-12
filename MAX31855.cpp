@@ -331,7 +331,7 @@ Function to filter thermocouple data using a weighted moving average.
 */
 double LowPassFilter::filter(double x)
 {
-  double y = _alpha * yPrev + (1.0f - _alpha) * x;
+  double y = (1.0 -_alpha) * yPrev + _alpha * x;
   yPrev = y;
   return y;
 }

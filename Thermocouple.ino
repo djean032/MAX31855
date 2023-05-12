@@ -24,6 +24,7 @@ For the slave select or chip select pins, any of the digital pins work. In this 
 #define MAXCS3  4
 #define MAXCS4  5
 #define MAXCLK  SCK
+#define FILTER_WEIGHT 0.3
 
 // Initialize the thermocouples using an array of pointers to their location, so we can iterate over them in our loop function.
 MAX31855 *thermocouple[] = {new MAX31855(MAXCLK, MAXCS1, MAXDO, 'T'),new MAX31855(MAXCLK, MAXCS2, MAXDO, 'T'),new MAX31855(MAXCLK, MAXCS3, MAXDO, 'T'),new MAX31855(MAXCLK, MAXCS4, MAXDO, 'T')};
@@ -70,7 +71,7 @@ void setup() {
 void loop() {
 
   // Instantiating our low pass filters, which are weighted moving averages that use a weight, alpha, to determine how much of the previous value to carry forward.
-  //LowPassFilter *filter[] = {new LowPassFilter(0.4),new LowPassFilter(0.4),new LowPassFilter(0.4),new LowPassFilter(0.4)};
+  LowPassFilter *filter[] = {new LowPassFilter(FILTER_WEIGHT),new LowPassFilter(FILTER_WEIGHT),new LowPassFilter(FILTER_WEIGHT),new LowPassFilter(FILTER_WEIGHT)};
 
   // Setup serial and LCD for print operationos
   Serial.println();
@@ -86,12 +87,12 @@ void loop() {
     bits = (*thermocouple[i]).readBits();
     temp = (*thermocouple[i]).correctedTempCelsius(bits);
     therm = (*thermocouple[i]).readInternal(bits);
-    //double filteredTemp = (*filter[i]).filter(temp);
-    String tempString = "Sensor " + String(i) + ": " + String(temp);
-    Serial.print(temp);
+    double filteredTemp = (*filter[i]).filter(temp);
+    String tempString = "Sensor " + String(i) + ": " + String(filteredTemp);
+    Serial.print(filteredTemp);
     Serial.print("\t");
     LCD.print(tempString);
     LCD.write(13);
   }
-  delay(1000);
+  delay(500);
 }
